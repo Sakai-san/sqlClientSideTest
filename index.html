@@ -12,19 +12,104 @@
     <h2>Test with sql data storage client-side</h2>
 
     <script>
+/*
+            CREATE TABLE IF NOT EXISTS Project(
+                ID							INTEGER UNSIGNED NOT NULL AUTOINCREMENT,
+                Name						VARCHAR(128) NOT NULL,
+                Start						DATE NOT NULL,
+                End							DATE,
+                PRIMARY KEY (ID)
+            )ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+            CREATE TABLE IF NOT EXISTS Employee(
+                ID							INTEGER UNSIGNED NOT NULL AUTOINCREMENT,
+                First_name					VARCHAR(128) NOT NULL,
+                Last_name					VARCHAR(128) NOT NULL,
+                Start						DATE NOT NULL,
+                End							DATE,
+                Kids_number					INTEGER UNSIGNED,
+                Salary						FLOAT UNSIGNED,
+                Department_id				INTEGER UNSIGNED,
+                PRIMARY KEY (id),
+                CONSTRAINT FK_employee_department
+                    FOREIGN KEY (Department_id) REFERENCES Department(id) ON DELETE RESTRICT ON UPDATE RESTRICT
+            )ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+            CREATE TABLE IF NOT EXISTS Involvement(
+                Employee_id	 				INTEGER UNSIGNED NOT NULL,
+                Project_id 					INTEGER UNSIGNED NOT NULL,
+                PRIMARY KEY (Employee_id, Project_id),
+                CONSTRAINT FK_involvement_employee
+                    FOREIGN KEY (Employee_id) REFERENCES Employee(ID) ON DELETE RESTRICT ON UPDATE RESTRICT,
+
+                CONSTRAINT FK_involvement_project
+                    FOREIGN KEY (Project_id) REFERENCES Project(id) ON DELETE RESTRICT ON UPDATE RESTRICT
+            )ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+
+
+            INSERT INTO Project(Name, Start, End)
+            VALUES
+                ('Alpha', '2010-03-01', NULL),
+                ('Beta', '2014-05-01', NULL);
+
+            INSERT INTO Employee(First_name, Last_name, Start, End, Kids_number, Salary, Department_id)
+            VALUES
+                ('Ryu', 'Tanaka', '2010-02-01',	'2012-12-31',	0,	30700.30, (SELECT ID FROM Department WHERE Name='Finance')  ),
+                ('Ryoko', 'Sasaki', '2014-08-01', NULL,	1,	50900, (SELECT ID FROM Department WHERE Name='Sales')  ),
+                ('Dimitri', 'Pavlovsky', '2007-05-01', NULL,	0,	61400.50, (SELECT ID FROM Department WHERE Name='Marketing')  ),
+                ('Oleg', 'Grichkin', '2008-07-01', '2011-10-31', 3, 78000.80, (SELECT ID FROM Department WHERE Name='Sales')  );
+
+
+
+            INSERT INTO Involvement( Employee_id, Project_id )
+            VALUES
+                ( (SELECT id FROM Employee WHERE First_name='Dimitri'), (SELECT ID FROM Project WHERE Name='Beta') ),
+
+                ( (SELECT id FROM Employee WHERE First_name='Ryu'), (SELECT ID FROM Project WHERE Name='Beta') ),
+
+                ( (SELECT id FROM Employee WHERE First_name='Ryoko'), (SELECT ID FROM Project WHERE Name='Beta') ),
+
+                ( (SELECT id FROM Employee WHERE First_name='Ryoko'), (SELECT ID FROM Project WHERE Name='Alpha') );
+*/
+
+
+        var studybyyourselfDB =
+            `CREATE TABLE IF NOT EXISTS Department(
+                ID							INTEGER PRIMARY KEY AUTOINCREMENT,
+                Name						VARCHAR(128) NOT NULL
+                );
+
+
+
+            INSERT INTO Department(Name)
+            VALUES
+                ('Marketing'),
+                ('Finance'),
+                ('Sales'),
+                ('IT');
+
+            `;
+
+
+
+
         //Create the database
         var db = new SQL.Database();
         // Run a query without reading the results
-        db.run("CREATE TABLE test (col1, col2);");
+
+//        db.run("CREATE TABLE test (col1, col2);");
         // Insert two rows: (1,111) and (2,222)
-        db.run("INSERT INTO test VALUES (?,?), (?,?)", [1,111,2,222]);
+//        db.run("INSERT INTO test VALUES (?,?), (?,?)", [1,111,2,222]);
 
         // Prepare a statement
-        var stmt = db.prepare("SELECT * FROM test WHERE col1 BETWEEN $start AND $end");
-        stmt.getAsObject({$start:1, $end:1}); // {col1:1, col2:111}
+//        var stmt = db.prepare("SELECT * FROM test WHERE col1 BETWEEN $start AND $end");
+//        stmt.getAsObject({$start:1, $end:1}); // {col1:1, col2:111}
 
-        // Bind new values
-        stmt.bind({$start:1, $end:2});
+
+
+        db.run( studybyyourselfDB );
+        var stmt = db.prepare("SELECT * FROM Department");
         while(stmt.step()) { //
             var row = stmt.getAsObject();
             console.log(row);
