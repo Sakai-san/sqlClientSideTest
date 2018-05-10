@@ -1,103 +1,85 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>SQL client-side</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" media="screen" href="main.css" />
-    <script src="lib/js/sql.js"></script>
-</head>
-<body>
-    <h2>Test with sql data storage client-side</h2>
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>SQL client-side</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" type="text/css" media="screen" href="main.css" />
 
-    <script>
-        var studybyyourselfDB =
-            `CREATE TABLE IF NOT EXISTS Department(
-                ID							INTEGER PRIMARY KEY AUTOINCREMENT,
-                Name						VARCHAR(128) NOT NULL
-            );
+    </head>
+    <body>
+        <h2>Test with sql data storage client-side</h2>
+        <textarea id="sqlEditor" placeholder="enter you SQL query"></textarea>
+        <button>execute</button>
 
-            CREATE TABLE IF NOT EXISTS Project(
-                ID							INTEGER PRIMARY KEY AUTOINCREMENT,
-                Name						VARCHAR(128) NOT NULL,
-                Start						DATE NOT NULL,
-                End							DATE
-            );
+        <script src="lib/js/jquery3.3.1.js"></script>
+        <script src="lib/js/sql.js"></script>
+        <script src="lib/js/createStudybyyourselfDB.js"></script>
 
-            CREATE TABLE IF NOT EXISTS Employee(
-                ID							INTEGER PRIMARY KEY AUTOINCREMENT,
-                First_name					VARCHAR(128) NOT NULL,
-                Last_name					VARCHAR(128) NOT NULL,
-                Start						DATE NOT NULL,
-                End							DATE,
-                Kids_number					INTEGER UNSIGNED,
-                Salary						FLOAT UNSIGNED,
-                Department_id				INTEGER REFERENCES Department(id) ON DELETE RESTRICT ON UPDATE RESTRICT
-            );
+        <script>
 
-            CREATE TABLE IF NOT EXISTS Involvement(
-                Employee_id	 				INTEGER REFERENCES Employee(ID) ON DELETE RESTRICT ON UPDATE RESTRICT,
-                Project_id 					INTEGER REFERENCES Project(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
-                PRIMARY KEY (Employee_id, Project_id)
-            );
+            //Create the database
+            var db = new SQL.Database();
+            // Run a query without reading the results
 
+    //        db.run("CREATE TABLE test (col1, col2);");
+            // Insert two rows: (1,111) and (2,222)
+    //        db.run("INSERT INTO test VALUES (?,?), (?,?)", [1,111,2,222]);
 
-            INSERT INTO Department(Name)
-            VALUES
-                ('Marketing'),
-                ('Finance'),
-                ('Sales'),
-                ('IT');
-
-            INSERT INTO Project(Name, Start, End)
-            VALUES
-                ('Alpha', '2010-03-01', NULL),
-                ('Beta', '2014-05-01', NULL);
-
-            INSERT INTO Employee(First_name, Last_name, Start, End, Kids_number, Salary, Department_id)
-            VALUES
-                ('Ryu', 'Tanaka', '2010-02-01',	'2012-12-31',	0,	30700.30, (SELECT ID FROM Department WHERE Name='Finance')  ),
-                ('Ryoko', 'Sasaki', '2014-08-01', NULL,	1,	50900, (SELECT ID FROM Department WHERE Name='Sales')  ),
-                ('Dimitri', 'Pavlovsky', '2007-05-01', NULL,	0,	61400.50, (SELECT ID FROM Department WHERE Name='Marketing')  ),
-                ('Oleg', 'Grichkin', '2008-07-01', '2011-10-31', 3, 78000.80, (SELECT ID FROM Department WHERE Name='Sales')  );
+            // Prepare a statement
+    //        var stmt = db.prepare("SELECT * FROM test WHERE col1 BETWEEN $start AND $end");
+    //        stmt.getAsObject({$start:1, $end:1}); // {col1:1, col2:111}
 
 
 
-            INSERT INTO Involvement( Employee_id, Project_id )
-            VALUES
-                ( (SELECT id FROM Employee WHERE First_name='Dimitri'), (SELECT ID FROM Project WHERE Name='Beta') ),
-
-                ( (SELECT id FROM Employee WHERE First_name='Ryu'), (SELECT ID FROM Project WHERE Name='Beta') ),
-
-                ( (SELECT id FROM Employee WHERE First_name='Ryoko'), (SELECT ID FROM Project WHERE Name='Beta') ),
-
-                ( (SELECT id FROM Employee WHERE First_name='Ryoko'), (SELECT ID FROM Project WHERE Name='Alpha') );
-            `;
+            db.run( studybyyourselfDB );
 
 
 
-        //Create the database
-        var db = new SQL.Database();
-        // Run a query without reading the results
+    /*
+            var stmt = db.prepare("SELECT * FROM Employee AS E INNER JOIN Department ON Department.ID = E.Department_id");
+            while(stmt.step()) { //
+                var row = stmt.getAsObject();
+                console.log(row);
+                // [...] do something with the row of result
+            }
+    */
 
-//        db.run("CREATE TABLE test (col1, col2);");
-        // Insert two rows: (1,111) and (2,222)
-//        db.run("INSERT INTO test VALUES (?,?), (?,?)", [1,111,2,222]);
+        $("button").click( function(){
+            var getSqlEditorContent = $('#sqlEditor').val();
+            console.log("content", getSqlEditorContent);
 
-        // Prepare a statement
-//        var stmt = db.prepare("SELECT * FROM test WHERE col1 BETWEEN $start AND $end");
-//        stmt.getAsObject({$start:1, $end:1}); // {col1:1, col2:111}
+            console.log( db.exec( getSqlEditorContent ) );
+            renderQueryResult( db.exec( getSqlEditorContent ) );
+        });
+
+        /*
+            params: queryResult : array<Object>
+        */
+        var renderQueryResult = function ( queryResult ){
+            var $table = $("<table></table>");
+
+            var $thead = $("<thead></thead>");
+            var $headTr = $("<tr></tr>");
+            var headRow = queryResult[0].columns.map( (item) => `<td>${item}</td>` );
+            $headTr.append( headRow );
+            $thead.append( $headTr );
+
+            var $tbody = $("<tbody></tbody>");
+            queryResult[0].values.forEach( (row) => {
+                var $bodyTr = $("<tr></tr>");
+                var bodyRow = row.map( (item) => `<td>${item}</td>` );
+                $bodyTr.append( bodyRow );
+                $tbody.append( $bodyTr );
+            });
+
+            $table.append( $thead );
+            $table.append( $tbody );
+            $("body").append( $table );
+        };
 
 
-
-        db.run( studybyyourselfDB );
-        var stmt = db.prepare("SELECT * FROM Employee AS E INNER JOIN Department ON Department.ID = E.Department_id");
-        while(stmt.step()) { //
-            var row = stmt.getAsObject();
-            console.log(row);
-            // [...] do something with the row of result
-        }
-    </script>
-</body>
+        </script>
+    </body>
 </html>
